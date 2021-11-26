@@ -50,12 +50,12 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
             throw new IllegalArgumentException("Illegal loadFactor: " + loadFactor);
 
         this.loadFactor = loadFactor;
-        this.capacity = Math.max(DEFAULT_CAPACITY, capacity);
+        HashTableOpenAddressingBase.capacity = Math.max(DEFAULT_CAPACITY, capacity);
         // adjustCapacity();
-        threshold = (int) (this.capacity * loadFactor);
+        threshold = (int) (HashTableOpenAddressingBase.capacity * loadFactor);
 
-        keys = (K[]) new Object[this.capacity];
-        values = (V[]) new Object[this.capacity];
+        keys = (K[]) new Object[HashTableOpenAddressingBase.capacity];
+        values = (V[]) new Object[HashTableOpenAddressingBase.capacity];
     }
 
     protected abstract int doubleHash(int firstHash, int value, int timesHashed);
@@ -157,10 +157,9 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
         }
     }
 
-    // Converts a hash value to an index. Essentially, this strips the
-    // negative sign and places the hash value in the domain [0, capacity)
+    // [0, capacity)
     protected final int normalizeIndex(int keyHash) {
-        return (keyHash & 0x7FFFFFFF) % capacity;
+        return Math.abs(keyHash % capacity);
     }
 
     // Finds the greatest common denominator of a and b.
@@ -180,8 +179,8 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
 
         final int offset = normalizeIndex(HashTableDoubleHashing.hashCodeSSF(key));
 
-        for (int i = offset, j = -1,
-                timesHashed = 1;; i = normalizeIndex(offset + doubleHash(offset, key.hashCode(), timesHashed++))) {
+        for (int i = offset, j = -1, timesHashed = 1;; i = normalizeIndex(
+                offset + doubleHash(offset, HashTableDoubleHashing.hashCodeSSF(key), timesHashed++))) {
 
             // The current slot was previously deleted
             if (keys[i] == TOMBSTONE) {
@@ -237,12 +236,12 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
         if (key == null)
             throw new IllegalArgumentException("Null key");
 
-        final int offset = normalizeIndex(key.hashCode());
+        final int offset = normalizeIndex(HashTableDoubleHashing.hashCodeSSF(key));
 
         // Start at the original hash value and probe until we find a spot where our key
         // is or hit a null element in which case our element does not exist.
-        for (int i = offset, j = -1,
-                timesHashed = 1;; i = normalizeIndex(offset + doubleHash(offset, key.hashCode(), timesHashed++))) {
+        for (int i = offset, j = -1, timesHashed = 1;; i = normalizeIndex(
+                offset + doubleHash(offset, HashTableDoubleHashing.hashCodeSSF(key), timesHashed++))) {
 
             // Ignore deleted cells, but record where the first index
             // of a deleted cell is found to perform lazy relocation later.
@@ -284,12 +283,12 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
         if (key == null)
             throw new IllegalArgumentException("Null key");
 
-        final int offset = normalizeIndex(key.hashCode());
+        final int offset = normalizeIndex(HashTableDoubleHashing.hashCodeSSF(key));
 
         // Start at the original hash value and probe until we find a spot where our key
         // is or we hit a null element in which case our element does not exist.
-        for (int i = offset, j = -1,
-                timesHashed = 1;; i = normalizeIndex(offset + doubleHash(offset, key.hashCode(), timesHashed++))) {
+        for (int i = offset, j = -1, timesHashed = 1;; i = normalizeIndex(
+                offset + doubleHash(offset, HashTableDoubleHashing.hashCodeSSF(key), timesHashed++))) {
 
             // Ignore deleted cells, but record where the first index
             // of a deleted cell is found to perform lazy relocation later.
@@ -333,12 +332,12 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
         if (key == null)
             throw new IllegalArgumentException("Null key");
 
-        final int offset = normalizeIndex(key.hashCode());
+        final int offset = normalizeIndex(HashTableDoubleHashing.hashCodeSSF(key));
 
         // Starting at the original hash probe until we find a spot where our key is
         // or we hit a null element in which case our element does not exist.
-        for (int i = offset,
-                timesHashed = 1;; i = normalizeIndex(offset + doubleHash(offset, key.hashCode(), timesHashed++))) {
+        for (int i = offset, timesHashed = 1;; i = normalizeIndex(
+                offset + doubleHash(offset, HashTableDoubleHashing.hashCodeSSF(key), timesHashed++))) {
 
             // Ignore deleted cells
             if (keys[i] == TOMBSTONE)

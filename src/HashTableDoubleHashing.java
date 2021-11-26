@@ -110,13 +110,12 @@ public class HashTableDoubleHashing<K, V> extends HashTableOpenAddressingBase<K,
     }
 
     public static <K> int hashCodeSSF(K key) {
-        int capacity = getCapacity();
         int hash = 0;
         String stringKey = key.toString();
         for (int i = 0; i < stringKey.length(); i++) {
             hash += stringKey.charAt(i);
         }
-        return hash % capacity;
+        return hash;
     }
 
     public static <K> int hashCodePAF(K key) {
@@ -126,7 +125,6 @@ public class HashTableDoubleHashing<K, V> extends HashTableOpenAddressingBase<K,
         for (int i = 0; i < alphabet.length(); i++) {
             characters.add(alphabet.charAt(i));
         }
-        int capacity = getCapacity();
 
         final int constant = 31;
         int hash = 0;
@@ -136,7 +134,7 @@ public class HashTableDoubleHashing<K, V> extends HashTableOpenAddressingBase<K,
             hash += (characters.indexOf(stringKey.charAt(i)) + 1) * Math.pow(constant, stringKey.length() - 1 - i);
         }
 
-        return hash % capacity;
+        return hash;
 
     }
 }
