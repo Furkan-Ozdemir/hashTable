@@ -19,7 +19,10 @@ public class Main {
             FileHandling.readFileAndPut("C:\\Users\\DELL\\Desktop\\ödev\\bbc\\business\\" + file.getName());
         }
         long estimatedTime = System.nanoTime() - startTime;
-        // System.out.println(FileHandling.table.toString());
+        // System.out.println(FileHandling.table.keys());
+
+        System.out.println(FileHandling.table.toString());
+
         System.out.println(FileHandling.table.size());
 
         System.out.println(HashTableDoubleHashing.getCapacity());

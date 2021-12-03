@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class FileHandling {
-    static HashTableDoubleHashing<String, String> table = new HashTableDoubleHashing<>();
+    static HashTableDoubleHashing<String, Entry> table = new HashTableDoubleHashing<>();
 
     static ArrayList<String> stopWords = new ArrayList<>();
 
@@ -21,13 +21,13 @@ public class FileHandling {
 
             if (stripped.length == 1) {
                 if (!stopWords.contains(stripped[0])) { // stopword değilse table a ekliyor
-                    table.insert(stripped[0], file.getName());
+                    table.insert(stripped[0], new Entry(file.getName(), 1));
                 }
                 // stopword ise boş geç.
             }
             if (stripped.length == 2) {
                 if (!stopWords.contains(stripped[0] + stripped[1])) { // stopword değilse table a ekliyor
-                    table.insert(stripped[0] + stripped[1], file.getName());
+                    table.insert(stripped[0] + stripped[1], new Entry(file.getName(), 1));
                 }
                 // stopword ise boş geç.
             }

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.LinkedList;
 
 @SuppressWarnings("unchecked")
 public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
@@ -25,7 +26,7 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
 
     // These arrays store the key-value pairs.
     protected K[] keys;
-    protected V[] values;
+    protected LinkedList<Entry>[] values;
 
     // Special marker token used to indicate the deletion of a key-value pair
     protected final K TOMBSTONE = (K) (new Object());
@@ -55,7 +56,7 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
         threshold = (int) (HashTableOpenAddressingBase.capacity * loadFactor);
 
         keys = (K[]) new Object[HashTableOpenAddressingBase.capacity];
-        values = (V[]) new Object[HashTableOpenAddressingBase.capacity];
+        values = new LinkedList[HashTableOpenAddressingBase.capacity];
     }
 
     protected abstract int doubleHash(int firstHash, int value, int timesHashed);
@@ -94,14 +95,6 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
         return keyCount == 0;
     }
 
-    public V put(K key, V value) {
-        return insert(key, value);
-    }
-
-    public V add(K key, V value) {
-        return insert(key, value);
-    }
-
     // Returns true/false on whether a given key exists within the hash-table.
     public boolean containsKey(K key) {
         return hasKey(key);
@@ -117,11 +110,11 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
     }
 
     // Returns a list of non-unique values found in the hash table
-    public List<V> values() {
-        List<V> hashtableValues = new ArrayList<>(size());
+    public List<Entry> values() {
+        List<Entry> hashtableValues = new ArrayList<>(size());
         for (int i = 0; i < capacity; i++)
             if (keys[i] != null && keys[i] != TOMBSTONE)
-                hashtableValues.add(values[i]);
+                hashtableValues.add(values[i].get(i));
         return hashtableValues;
     }
 
@@ -133,7 +126,7 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
         threshold = (int) (capacity * loadFactor);
 
         K[] oldKeyTable = (K[]) new Object[capacity];
-        V[] oldValueTable = (V[]) new Object[capacity];
+        LinkedList<Entry>[] oldValueTable = new LinkedList[capacity];
 
         // Perform key table pointer swap
         K[] keyTableTmp = keys;
@@ -141,7 +134,7 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
         oldKeyTable = keyTableTmp;
 
         // Perform value table pointer swap
-        V[] valueTableTmp = values;
+        LinkedList<Entry>[] valueTableTmp = values;
         values = oldValueTable;
         oldValueTable = valueTableTmp;
 
@@ -150,8 +143,13 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
         keyCount = usedBuckets = 0;
 
         for (int i = 0; i < oldKeyTable.length; i++) {
-            if (oldKeyTable[i] != null && oldKeyTable[i] != TOMBSTONE)
-                insert(oldKeyTable[i], oldValueTable[i]);
+            if (oldKeyTable[i] != null && oldKeyTable[i] != TOMBSTONE) {
+                Iterator<Entry> iter = oldValueTable[i].iterator();
+                while (iter.hasNext()) {
+                    insert(oldKeyTable[i], iter.next());
+                }
+
+            }
             oldValueTable[i] = null;
             oldKeyTable[i] = null;
         }
@@ -171,7 +169,13 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
 
     // Place a key-value pair into the hash-table. If the value already
     // exists inside the hash-table then the value is updated.
-    public V insert(K key, V val) {
+
+    /*
+     * TODO Aynı key varsa: fileName'leri karşılaştır, fileNameler aynı ise sadece
+     * count'ı arttır. FileName farklı ise yeniden ekle. Şu anda aynı fileları
+     * tekrar ekliyor, farklı name olsa bile count arttırılmış oluyor.
+     */
+    public Entry insert(K key, Entry val) {
         if (key == null)
             throw new IllegalArgumentException("Null key");
         if (usedBuckets >= threshold)
@@ -188,23 +192,29 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
                     j = i;
 
                 // The current cell already contains a key
-                // then double hash again
+
             } else if (keys[i] != null) {
                 // The key we're trying to insert already exists in the hash-table,
-                // so update its value with the most recent value
+                // so add again
                 if (keys[i].equals(key)) {
+                    Entry updatedCountEntry = val;
+                    updatedCountEntry.incrementCount();
 
-                    V oldValue = values[i];
                     if (j == -1) {
-                        values[i] = val;
+                        values[i].add(updatedCountEntry);
+                        keys[i] = key;
+                        keyCount++;
                     } else {
                         keys[i] = TOMBSTONE;
                         values[i] = null;
                         keys[j] = key;
-                        values[j] = val;
+                        values[j].add(updatedCountEntry);
+                        keyCount++;
+
                     }
                     modificationCount++;
-                    return oldValue;
+                    return values[i].getFirst(); // burası yanlış ama etkilemiyor.
+
                 }
 
                 // Current cell is null so an insertion/update can occur
@@ -214,7 +224,10 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
                     usedBuckets++;
                     keyCount++;
                     keys[i] = key;
-                    values[i] = val;
+                    if (values[i] == null) {
+                        values[i] = new LinkedList<Entry>();
+                    }
+                    values[i].add(val);
 
                     // Previously seen deleted bucket. Instead of inserting
                     // the new element at i where the null element is insert
@@ -222,7 +235,7 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
                 } else {
                     keyCount++;
                     keys[j] = key;
-                    values[j] = val;
+                    values[j].add(val);
                 }
 
                 modificationCount++;
@@ -279,7 +292,7 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
     // Get the value associated with the input key.
     // NOTE: returns null if the value is null AND also returns
     // null if the key does not exists.
-    public V get(K key) {
+    public Entry get(K key) {
         if (key == null)
             throw new IllegalArgumentException("Null key");
 
@@ -313,22 +326,28 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
                         values[j] = values[i];
                         keys[i] = TOMBSTONE;
                         values[i] = null;
-                        return values[j];
+                        Iterator<Entry> iter = values[j].iterator();
+                        while (iter.hasNext())
+                            System.out.println(iter.next() + " ");
+
                     } else {
-                        return values[i];
+                        Iterator<Entry> iter = values[i].iterator();
+                        while (iter.hasNext())
+                            System.out.println(iter.next() + " ");
                     }
                 }
 
                 // Element was not found in the hash-table :/
-            } else
-                return null;
+            } else {
+                // return null;
+            }
         }
     }
 
     // Removes a key from the map and returns the value.
     // NOTE: returns null if the value is null AND also returns
     // null if the key does not exists.
-    public V remove(K key) {
+    public K remove(K key) {
         if (key == null)
             throw new IllegalArgumentException("Null key");
 
@@ -351,10 +370,12 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
             if (keys[i].equals(key)) {
                 keyCount--;
                 modificationCount++;
-                V oldValue = values[i];
+                // Entry oldValue = values[i];
+                K deletedKey = keys[i];
+                values[i] = null;
                 keys[i] = TOMBSTONE;
                 values[i] = null;
-                return oldValue;
+                return deletedKey;
             }
         }
     }
@@ -363,11 +384,20 @@ public abstract class HashTableOpenAddressingBase<K, V> implements Iterable<K> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        StringBuilder valuesString;
 
         sb.append("{");
         for (int i = 0; i < capacity; i++)
-            if (keys[i] != null && keys[i] != TOMBSTONE)
-                sb.append(keys[i] + " => " + values[i] + ", ");
+            if (keys[i] != null && keys[i] != TOMBSTONE) {
+                valuesString = new StringBuilder();
+
+                for (Entry value : values[i]) {
+
+                    valuesString.append(value.getFileName() + " " + value.getCount() + " , ");
+                }
+                sb.append(keys[i] + " => " + valuesString.toString() + ", ");
+                valuesString = null;
+            }
         sb.append("}");
 
         return sb.toString();
