@@ -1,17 +1,6 @@
-/**
- * An implementation of a hash-table using open addressing with linear probing
- * as a collision resolution method.
- *
- * @author William Fiset, william.alexandre.fiset@gmail.com
- */
+import java.util.ArrayList;
 
 public class HashTableLinearProbing<K, V> extends HashTableOpenAddressingBase<K, V> {
-    // TODO Linear probing için linear probe functionu yap
-
-    // This is the linear constant used in the linear probing, it can be
-    // any positive number. The table capacity will be adjusted so that
-    // the GCD(capacity, LINEAR_CONSTANT) = 1 so that all buckets can be probed.
-    private static final int LINEAR_CONSTANT = 17;
 
     public HashTableLinearProbing() {
         super();
@@ -30,18 +19,43 @@ public class HashTableLinearProbing<K, V> extends HashTableOpenAddressingBase<K,
     protected int doubleHash(int firstHash, int value, int timesHashed) {
         return 0;
     }
-    // @Override
-    // protected int probe(int x) {
-    // // return LINEAR_CONSTANT * x;
-    // return 0;
-    // }
 
-    // Adjust the capacity so that the linear constant and
-    // the table capacity are relatively prime.
+    // TODO bunu yap
     @Override
-    protected void adjustCapacity() {
-        while (gcd(LINEAR_CONSTANT, capacity) != 1) {
-            capacity++;
+    protected int linearProbe(int index) {
+        if (index == capacity) {
+            index = 0;
+            return index;
         }
+        return ++index;
+    }
+
+    public static <K> int hashCodeSSF(K key) {
+        int hash = 0;
+        String stringKey = key.toString();
+        for (int i = 0; i < stringKey.length(); i++) {
+            hash += stringKey.charAt(i);
+        }
+        return hash;
+    }
+
+    public static <K> int hashCodePAF(K key) {
+        ArrayList<Character> characters = new ArrayList<>();
+        String alphabet = "abcdefghijklmnopqrstuvwxyz";
+
+        for (int i = 0; i < alphabet.length(); i++) {
+            characters.add(alphabet.charAt(i));
+        }
+
+        final int constant = 31;
+        int hash = 0;
+        String stringKey = key.toString();
+
+        for (int i = 0; i < stringKey.length(); i++) {
+            hash += (characters.indexOf(stringKey.charAt(i)) + 1) * Math.pow(constant, stringKey.length() - 1 - i);
+        }
+
+        return hash;
+
     }
 }

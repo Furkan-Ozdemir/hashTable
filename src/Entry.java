@@ -1,8 +1,8 @@
 
 public class Entry {
 
-    String fileName;
-    int count;
+    private String fileName;
+    private int count;
 
     public Entry(String fileName, int count) {
         this.fileName = fileName;
