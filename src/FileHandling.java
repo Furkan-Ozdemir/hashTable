@@ -37,7 +37,7 @@ public class FileHandling {
     }
 
     public static void stopWords() throws Exception {
-        File file = new File("C:\\Users\\DELL\\Desktop\\ödev\\stop_words_en.txt");
+        File file = new File("stop_words_en.txt");
         Scanner sc = new Scanner(file);
         while (sc.hasNext()) {
             String[] stripped = stripDelimeter(sc.next());
